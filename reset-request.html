@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>パスワードリセット - GSD</title>
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -83,26 +85,10 @@
       text-align: center;
       display: none;
     }
-    .message.success {
-      background: #d4edda;
-      color: #155724;
-      display: block;
-    }
-    .message.error {
-      background: #f8d7da;
-      color: #721c24;
-      display: block;
-    }
-    .message.loading {
-      background: #e7f3ff;
-      color: #004085;
-      display: block;
-    }
-    .help-text {
-      font-size: 12px;
-      color: #888;
-      margin-top: 5px;
-    }
+    .message.success { background: #d4edda; color: #155724; display: block; }
+    .message.error { background: #f8d7da; color: #721c24; display: block; }
+    .message.loading { background: #e7f3ff; color: #004085; display: block; }
+    .help-text { font-size: 12px; color: #888; margin-top: 5px; }
     .spinner {
       display: inline-block;
       width: 16px;
@@ -123,9 +109,14 @@
       text-decoration: none;
       font-size: 14px;
     }
-    .back-link:hover {
-      text-decoration: underline;
+    .back-link:hover { text-decoration: underline; }
+    .recaptcha-notice {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      margin-top: 15px;
     }
+    .recaptcha-notice a { color: #667eea; }
   </style>
 </head>
 <body>
@@ -151,10 +142,18 @@
     <div id="message"></div>
     
     <a href="index.html" class="back-link">← アカウント作成ページに戻る</a>
+    
+    <p class="recaptcha-notice">
+      このサイトはreCAPTCHAによって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
   </div>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
+    // ★★★ 設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    const RECAPTCHA_SITE_KEY = 'YOUR_SITE_KEY';
     
     const form = document.getElementById('resetRequestForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -181,12 +180,16 @@
       showMessage('loading', '<span class="spinner"></span>リセットメールを送信しています...');
       
       try {
+        // reCAPTCHAトークンを取得
+        const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'password_reset_request' });
+        
         const response = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
             endpoint: '/password/reset-request',
-            data: { userId, email }
+            data: { userId, email },
+            recaptchaToken: recaptchaToken
           })
         });
         
