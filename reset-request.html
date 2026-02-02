@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パスワードリセット - GSD</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      max-width: 450px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+    .message.loading {
+      background: #e7f3ff;
+      color: #004085;
+      display: block;
+    }
+    .help-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 パスワードリセット</h1>
+    <p class="subtitle">登録済みのユーザーIDとメールアドレスを入力してください</p>
+    
+    <form id="resetRequestForm">
+      <div class="form-group">
+        <label for="userId">ユーザーID（店舗URL）</label>
+        <input type="text" id="userId" name="userId" placeholder="例: tokyoflower" required>
+        <p class="help-text">アカウント作成時に登録した店舗URLのID部分</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">登録メールアドレス</label>
+        <input type="email" id="email" name="email" placeholder="例: shop@example.com" required>
+      </div>
+      
+      <button type="submit" class="submit-btn" id="submitBtn">リセットメールを送信</button>
+    </form>
+    
+    <div id="message"></div>
+    
+    <a href="index.html" class="back-link">← アカウント作成ページに戻る</a>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const form = document.getElementById('resetRequestForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+    
+    function showMessage(type, text) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = text;
+    }
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const userId = document.getElementById('userId').value.trim();
+      const email = document.getElementById('email').value.trim();
+      
+      if (!userId || !email) {
+        showMessage('error', 'すべての項目を入力してください');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+      showMessage('loading', '<span class="spinner"></span>リセットメールを送信しています...');
+      
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/password/reset-request',
+            data: { userId, email }
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          showMessage('success', 
+            '✅ ' + result.message + '<br><br>' +
+            'メールに記載されたリンクからパスワードを再設定してください。'
+          );
+          form.reset();
+        } else {
+          showMessage('error', '❌ ' + (result.message || 'エラーが発生しました'));
+        }
+        
+      } catch (err) {
+        showMessage('error', '❌ 通信エラーが発生しました。しばらく経ってから再度お試しください。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'リセットメールを送信';
+      }
+    });
+  </script>
+</body>
+</html>
