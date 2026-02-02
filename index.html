@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GSDアカウント作成</title>
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -74,24 +76,12 @@
       padding: 15px;
       border-radius: 8px;
       text-align: center;
+      display: none;
     }
-    .message.success {
-      background: #d4edda;
-      color: #155724;
-    }
-    .message.error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    .message.loading {
-      background: #e7f3ff;
-      color: #004085;
-    }
-    .help-text {
-      font-size: 12px;
-      color: #888;
-      margin-top: 5px;
-    }
+    .message.success { background: #d4edda; color: #155724; display: block; }
+    .message.error { background: #f8d7da; color: #721c24; display: block; }
+    .message.loading { background: #e7f3ff; color: #004085; display: block; }
+    .help-text { font-size: 12px; color: #888; margin-top: 5px; }
     .spinner {
       display: inline-block;
       width: 16px;
@@ -104,6 +94,23 @@
       vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .links {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .links a:hover { text-decoration: underline; }
+    .recaptcha-notice {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      margin-top: 15px;
+    }
+    .recaptcha-notice a { color: #667eea; }
   </style>
 </head>
 <body>
@@ -143,11 +150,22 @@
     </form>
     
     <div id="message"></div>
+    
+    <div class="links">
+      <a href="reset-request.html">パスワードをお忘れですか？</a>
+    </div>
+    
+    <p class="recaptcha-notice">
+      このサイトはreCAPTCHAによって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
   </div>
 
   <script>
-    // ★★★ GASのWebアプリURLを設定 ★★★
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
+    // ★★★ 設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    const RECAPTCHA_SITE_KEY = 'YOUR_SITE_KEY';  // reCAPTCHAサイトキー
     
     const form = document.getElementById('accountForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -176,23 +194,19 @@
     function showMessage(type, text) {
       messageDiv.className = 'message ' + type;
       messageDiv.innerHTML = text;
-      messageDiv.style.display = 'block';
     }
     
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const formData = new FormData(form);
-      const data = {
-        endpoint: '/account/create',  // 既存APIパターンに合わせる
-        data: {}
-      };
+      const data = {};
       formData.forEach((value, key) => {
-        data.data[key] = value.trim();
+        data[key] = value.trim();
       });
       
       // バリデーション
-      const error = validateForm(data.data);
+      const error = validateForm(data);
       if (error) {
         showMessage('error', error);
         return;
@@ -203,10 +217,17 @@
       showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
       
       try {
+        // reCAPTCHAトークンを取得
+        const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'account_create' });
+        
         const response = await fetch(GAS_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },  // CORSを避けるため
-          body: JSON.stringify(data)
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/account/create',
+            data: data,
+            recaptchaToken: recaptchaToken  // reCAPTCHAトークンを追加
+          })
         });
         
         const result = await response.json();
@@ -222,12 +243,7 @@
         }
         
       } catch (err) {
-        // fetchが失敗した場合（CORSなど）
-        showMessage('success', 
-          '✅ 登録リクエストを送信しました！<br><br>' +
-          '確認メールが届くまでお待ちください。'
-        );
-        form.reset();
+        showMessage('error', '❌ 通信エラーが発生しました。しばらく経ってから再度お試しください。');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'アカウントを作成';
