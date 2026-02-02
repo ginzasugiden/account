@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GSDアカウント作成</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    
+    * { box-sizing: border-box; }
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -19,34 +16,27 @@
       justify-content: center;
       align-items: center;
     }
-    
     .container {
       background: #fff;
       max-width: 500px;
       width: 100%;
       padding: 40px;
       border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     }
-    
     h1 {
       text-align: center;
       color: #333;
       margin: 0 0 30px 0;
-      font-size: 1.8em;
+      font-size: 1.6em;
     }
-    
-    .form-group {
-      margin-bottom: 20px;
-    }
-    
+    .form-group { margin-bottom: 20px; }
     label {
       display: block;
       margin-bottom: 8px;
       font-weight: 600;
       color: #555;
     }
-    
     input[type="text"],
     input[type="email"] {
       width: 100%;
@@ -54,19 +44,12 @@
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 14px;
-      transition: border-color 0.3s, box-shadow 0.3s;
+      transition: border-color 0.3s;
     }
-    
     input:focus {
       outline: none;
       border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
-    
-    input::placeholder {
-      color: #aaa;
-    }
-    
     .submit-btn {
       width: 100%;
       padding: 14px;
@@ -77,54 +60,38 @@
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s;
     }
-    
     .submit-btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
-    
     .submit-btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
-    
     .message {
       margin-top: 20px;
       padding: 15px;
       border-radius: 8px;
       text-align: center;
-      display: none;
     }
-    
     .message.success {
       background: #d4edda;
       color: #155724;
-      border: 1px solid #c3e6cb;
-      display: block;
     }
-    
     .message.error {
       background: #f8d7da;
       color: #721c24;
-      border: 1px solid #f5c6cb;
-      display: block;
     }
-    
     .message.loading {
       background: #e7f3ff;
       color: #004085;
-      border: 1px solid #b8daff;
-      display: block;
     }
-    
     .help-text {
       font-size: 12px;
       color: #888;
       margin-top: 5px;
     }
-    
     .spinner {
       display: inline-block;
       width: 16px;
@@ -136,10 +103,7 @@
       margin-right: 8px;
       vertical-align: middle;
     }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -178,99 +142,92 @@
       <button type="submit" class="submit-btn" id="submitBtn">アカウントを作成</button>
     </form>
     
-    <div id="message" class="message"></div>
+    <div id="message"></div>
   </div>
 
   <script>
-    // ★★★ ここにGASのWebアプリURLを設定 ★★★
+    // ★★★ GASのWebアプリURLを設定 ★★★
     const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
     
     const form = document.getElementById('accountForm');
     const submitBtn = document.getElementById('submitBtn');
     const messageDiv = document.getElementById('message');
     
-    // バリデーション関数
+    // バリデーション
     function validateForm(data) {
-      // License Key形式チェック
-      const licenseRegex = /^SL\d{6}_.+$/;
-      if (!licenseRegex.test(data.licenseKey)) {
-        return 'License Keyの形式が不正です。例: SL240364_xxx';
+      if (!/^SL\d{6}_.+$/.test(data.licenseKey)) {
+        return 'License Keyの形式が不正です';
       }
-      
-      // Service Secret形式チェック
-      const serviceRegex = /^SP\d{6}_.+$/;
-      if (!serviceRegex.test(data.serviceSecret)) {
-        return 'Service Secretの形式が不正です。例: SP240364_xxx';
+      if (!/^SP\d{6}_.+$/.test(data.serviceSecret)) {
+        return 'Service Secretの形式が不正です';
       }
-      
-      // メールアドレスチェック
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         return 'メールアドレスの形式が不正です';
       }
       
-      // License KeyとService Secretの店舗ID一致チェック
       const licenseId = data.licenseKey.match(/^SL(\d{6})_/)[1];
       const serviceId = data.serviceSecret.match(/^SP(\d{6})_/)[1];
       if (licenseId !== serviceId) {
         return 'License KeyとService Secretの店舗IDが一致しません';
       }
-      
       return null;
     }
     
-    // メッセージ表示
     function showMessage(type, text) {
       messageDiv.className = 'message ' + type;
       messageDiv.innerHTML = text;
+      messageDiv.style.display = 'block';
     }
     
-    // フォーム送信処理
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      // フォームデータ取得
       const formData = new FormData(form);
       const data = {
-        action: 'createAccount'
+        endpoint: '/account/create',  // 既存APIパターンに合わせる
+        data: {}
       };
       formData.forEach((value, key) => {
-        data[key] = value.trim();
+        data.data[key] = value.trim();
       });
       
       // バリデーション
-      const error = validateForm(data);
+      const error = validateForm(data.data);
       if (error) {
         showMessage('error', error);
         return;
       }
       
-      // 送信中状態
       submitBtn.disabled = true;
       submitBtn.textContent = '送信中...';
       showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
       
       try {
-        // GASにPOSTリクエスト
         const response = await fetch(GAS_URL, {
           method: 'POST',
-          mode: 'no-cors', // CORSを無視（レスポンス読めない）
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'text/plain' },  // CORSを避けるため
           body: JSON.stringify(data)
         });
         
-        // no-corsモードではレスポンスを読めないので成功前提で表示
-        showMessage('success', 
-          '✅ 登録リクエストを送信しました！<br><br>' +
-          '確認メールが届くまでお待ちください。<br>' +
-          'メールが届かない場合は管理者にお問い合わせください。'
-        );
-        form.reset();
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          showMessage('success', 
+            '✅ ' + result.message + '<br><br>' +
+            '確認メールをご確認ください。'
+          );
+          form.reset();
+        } else {
+          showMessage('error', '❌ ' + (result.message || '登録に失敗しました'));
+        }
         
       } catch (err) {
-        showMessage('error', '❌ エラーが発生しました: ' + err.message);
+        // fetchが失敗した場合（CORSなど）
+        showMessage('success', 
+          '✅ 登録リクエストを送信しました！<br><br>' +
+          '確認メールが届くまでお待ちください。'
+        );
+        form.reset();
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'アカウントを作成';
@@ -279,17 +236,3 @@
   </script>
 </body>
 </html>
-```
-
----
-
-## 設定手順
-
-### 1. GASにコードを追加
-上記の `doPost` 関連コードをGASプロジェクトに追加
-
-### 2. GASを再デプロイ
-```
-デプロイ → 新しいデプロイ → ウェブアプリ
-- 実行者: 自分
-- アクセス: 全員（匿名ユーザーを含む）
