@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSDアカウント作成</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .container {
+      background: #fff;
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 30px 0;
+      font-size: 1.8em;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    input::placeholder {
+      color: #aaa;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+    
+    .message.loading {
+      background: #e7f3ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+      display: block;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛒 GSDアカウント作成</h1>
+    
+    <form id="accountForm">
+      <div class="form-group">
+        <label for="id">店舗URL（ID部分）</label>
+        <input type="text" id="id" name="id" placeholder="例: tokyoflower" required>
+        <p class="help-text">楽天店舗URLの /xxx/ 部分のみ入力</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="serviceSecret">Service Secret</label>
+        <input type="text" id="serviceSecret" name="serviceSecret" 
+               placeholder="例: SP240364_MUraZF2oFfd65519" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="licenseKey">License Key</label>
+        <input type="text" id="licenseKey" name="licenseKey" 
+               placeholder="例: SL240364_Jj6TnbFE5Fb24SQ6" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="sname">店舗名</label>
+        <input type="text" id="sname" name="sname" placeholder="例: 東京フラワー" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" name="email" placeholder="例: shop@example.com" required>
+      </div>
+      
+      <button type="submit" class="submit-btn" id="submitBtn">アカウントを作成</button>
+    </form>
+    
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    // ★★★ ここにGASのWebアプリURLを設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const form = document.getElementById('accountForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+    
+    // バリデーション関数
+    function validateForm(data) {
+      // License Key形式チェック
+      const licenseRegex = /^SL\d{6}_.+$/;
+      if (!licenseRegex.test(data.licenseKey)) {
+        return 'License Keyの形式が不正です。例: SL240364_xxx';
+      }
+      
+      // Service Secret形式チェック
+      const serviceRegex = /^SP\d{6}_.+$/;
+      if (!serviceRegex.test(data.serviceSecret)) {
+        return 'Service Secretの形式が不正です。例: SP240364_xxx';
+      }
+      
+      // メールアドレスチェック
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.email)) {
+        return 'メールアドレスの形式が不正です';
+      }
+      
+      // License KeyとService Secretの店舗ID一致チェック
+      const licenseId = data.licenseKey.match(/^SL(\d{6})_/)[1];
+      const serviceId = data.serviceSecret.match(/^SP(\d{6})_/)[1];
+      if (licenseId !== serviceId) {
+        return 'License KeyとService Secretの店舗IDが一致しません';
+      }
+      
+      return null;
+    }
+    
+    // メッセージ表示
+    function showMessage(type, text) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = text;
+    }
+    
+    // フォーム送信処理
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // フォームデータ取得
+      const formData = new FormData(form);
+      const data = {
+        action: 'createAccount'
+      };
+      formData.forEach((value, key) => {
+        data[key] = value.trim();
+      });
+      
+      // バリデーション
+      const error = validateForm(data);
+      if (error) {
+        showMessage('error', error);
+        return;
+      }
+      
+      // 送信中状態
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+      showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
+      
+      try {
+        // GASにPOSTリクエスト
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'no-cors', // CORSを無視（レスポンス読めない）
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        // no-corsモードではレスポンスを読めないので成功前提で表示
+        showMessage('success', 
+          '✅ 登録リクエストを送信しました！<br><br>' +
+          '確認メールが届くまでお待ちください。<br>' +
+          'メールが届かない場合は管理者にお問い合わせください。'
+        );
+        form.reset();
+        
+      } catch (err) {
+        showMessage('error', '❌ エラーが発生しました: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'アカウントを作成';
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+---
+
+## 設定手順
+
+### 1. GASにコードを追加
+上記の `doPost` 関連コードをGASプロジェクトに追加
+
+### 2. GASを再デプロイ
+```
+デプロイ → 新しいデプロイ → ウェブアプリ
+- 実行者: 自分
+- アクセス: 全員（匿名ユーザーを含む）
