@@ -196,59 +196,76 @@
       messageDiv.innerHTML = text;
     }
     
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(form);
-      const data = {};
-      formData.forEach((value, key) => {
-        data[key] = value.trim();
-      });
-      
-      // バリデーション
-      const error = validateForm(data);
-      if (error) {
-        showMessage('error', error);
-        return;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(form);
+  const data = {};
+  formData.forEach((value, key) => {
+    data[key] = value.trim();
+  });
+  
+  // バリデーション
+  const error = validateForm(data);
+  if (error) {
+    showMessage('error', error);
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = '送信中...';
+  showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
+  
+  try {
+    // reCAPTCHAトークンを取得（エラーハンドリング追加）
+    let recaptchaToken = '';
+    try {
+      if (typeof grecaptcha !== 'undefined') {
+        recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'account_create' });
+        console.log('reCAPTCHA token取得成功');
+      } else {
+        console.log('grecaptchaが未定義です');
       }
-      
-      submitBtn.disabled = true;
-      submitBtn.textContent = '送信中...';
-      showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
-      
-      try {
-        // reCAPTCHAトークンを取得
-        const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'account_create' });
-        
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            endpoint: '/account/create',
-            data: data,
-            recaptchaToken: recaptchaToken  // reCAPTCHAトークンを追加
-          })
-        });
-        
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-          showMessage('success', 
-            '✅ ' + result.message + '<br><br>' +
-            '確認メールをご確認ください。'
-          );
-          form.reset();
-        } else {
-          showMessage('error', '❌ ' + (result.message || '登録に失敗しました'));
-        }
-        
-      } catch (err) {
-        showMessage('error', '❌ 通信エラーが発生しました。しばらく経ってから再度お試しください。');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'アカウントを作成';
-      }
+    } catch (recaptchaError) {
+      console.error('reCAPTCHAエラー:', recaptchaError);
+      // reCAPTCHAエラーでも続行（GAS側でスキップされる）
+    }
+    
+    console.log('GASにリクエスト送信:', GAS_URL);
+    
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        endpoint: '/account/create',
+        data: data,
+        recaptchaToken: recaptchaToken
+      })
     });
+    
+    console.log('レスポンス受信:', response.status);
+    
+    const result = await response.json();
+    console.log('結果:', result);
+    
+    if (result.status === 'success') {
+      showMessage('success', 
+        '✅ ' + result.message + '<br><br>' +
+        '確認メールをご確認ください。'
+      );
+      form.reset();
+    } else {
+      showMessage('error', '❌ ' + (result.message || '登録に失敗しました'));
+    }
+    
+  } catch (err) {
+    console.error('通信エラー詳細:', err);
+    showMessage('error', '❌ 通信エラー: ' + err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'アカウントを作成';
+  }
+});
   </script>
 </body>
 </html>
