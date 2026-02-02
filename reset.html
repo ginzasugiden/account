@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新しいパスワードを設定 - GSD</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      max-width: 450px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+    .message.loading {
+      background: #e7f3ff;
+      color: #004085;
+      display: block;
+    }
+    .message.warning {
+      background: #fff3cd;
+      color: #856404;
+      display: block;
+    }
+    .help-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .password-requirements {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    .password-requirements h4 {
+      margin: 0 0 10px 0;
+      color: #555;
+      font-size: 13px;
+    }
+    .password-requirements ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #666;
+    }
+    .password-requirements li {
+      margin-bottom: 5px;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔑 新しいパスワードを設定</h1>
+    <p class="subtitle">新しいパスワードを入力してください</p>
+    
+    <div id="tokenError" class="message warning hidden">
+      ⚠️ 無効なリンクです。<br>
+      <a href="reset-request.html">パスワードリセットを再度リクエスト</a>してください。
+    </div>
+    
+    <form id="resetForm">
+      <div class="password-requirements">
+        <h4>パスワードの条件</h4>
+        <ul>
+          <li>8文字以上</li>
+          <li>英数字を含めることを推奨</li>
+        </ul>
+      </div>
+      
+      <div class="form-group">
+        <label for="newPassword">新しいパスワード</label>
+        <input type="password" id="newPassword" name="newPassword" 
+               placeholder="8文字以上で入力" required minlength="8">
+      </div>
+      
+      <div class="form-group">
+        <label for="confirmPassword">パスワード（確認）</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" 
+               placeholder="もう一度入力してください" required minlength="8">
+        <p class="help-text">確認のため同じパスワードを入力</p>
+      </div>
+      
+      <button type="submit" class="submit-btn" id="submitBtn">パスワードを変更</button>
+    </form>
+    
+    <div id="message"></div>
+    
+    <a href="index.html" class="back-link">← トップページに戻る</a>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const form = document.getElementById('resetForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+    const tokenErrorDiv = document.getElementById('tokenError');
+    
+    // URLからトークンを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    // トークンがない場合はエラー表示
+    if (!token) {
+      form.classList.add('hidden');
+      tokenErrorDiv.classList.remove('hidden');
+    }
+    
+    function showMessage(type, text) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = text;
+    }
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      // バリデーション
+      if (newPassword.length < 8) {
+        showMessage('error', 'パスワードは8文字以上で入力してください');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showMessage('error', 'パスワードが一致しません');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = '変更中...';
+      showMessage('loading', '<span class="spinner"></span>パスワードを変更しています...');
+      
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/password/reset',
+            data: { token, newPassword }
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          showMessage('success', 
+            '✅ ' + result.message + '<br><br>' +
+            '新しいパスワードでログインできます。'
+          );
+          form.classList.add('hidden');
+        } else {
+          showMessage('error', '❌ ' + (result.message || 'エラーが発生しました'));
+          
+          // トークンエラーの場合は再リクエストを促す
+          if (result.message && (
+            result.message.includes('無効なトークン') || 
+            result.message.includes('有効期限')
+          )) {
+            messageDiv.innerHTML += '<br><br><a href="reset-request.html">パスワードリセットを再度リクエスト</a>';
+          }
+        }
+        
+      } catch (err) {
+        showMessage('error', '❌ 通信エラーが発生しました。しばらく経ってから再度お試しください。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'パスワードを変更';
+      }
+    });
+  </script>
+</body>
+</html>
