@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>解約のご確認 - GSD</title>
+  <link rel="stylesheet" href="css/payment.css">
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD"></script>
+</head>
+<body>
+  <div class="container">
+
+    <div id="mockBanner" class="mock-banner">
+      🔧 MOCK MODE - 開発用画面（API は擬似レスポンス）
+    </div>
+
+    <h1>🛑 解約のご確認</h1>
+    <p id="shopNameDisplay" class="shop-name"></p>
+
+    <div id="cancelPanel" style="display:none;">
+      <div class="status-box status-warn">
+        <p class="status-title">現在のプラン</p>
+        <p class="status-value" id="currentPlan">—</p>
+        <hr>
+        <p class="status-title">次回課金予定日</p>
+        <p class="status-value" id="nextChargeDate">—</p>
+      </div>
+
+      <div class="cancel-points">
+        <p>解約すると、次回課金予定日の<strong>前日まで</strong>全機能をご利用いただけます。</p>
+        <ul>
+          <li>日割りでの返金はございません</li>
+          <li>次回課金は行われません</li>
+          <li>再登録は利用期間終了後に可能です</li>
+        </ul>
+      </div>
+
+      <div class="action-buttons">
+        <a href="manage.html" class="btn-secondary">キャンセル</a>
+        <button type="button" id="openConfirmBtn" class="btn-danger">解約手続きへ進む</button>
+      </div>
+    </div>
+
+    <div id="successPanel" class="success-panel"></div>
+    <div id="message" class="message"></div>
+
+    <p class="recaptcha-notice">
+      このサイトは reCAPTCHA によって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
+  </div>
+
+  <!-- ─── 二段階確認モーダル ─── -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <h3>本当に解約してよろしいですか？</h3>
+      <p>解約処理を取り消すことはできません。<br>
+      利用期間終了後にデータの参照ができなくなる場合があります。</p>
+      <div class="modal-actions">
+        <button type="button" id="closeConfirmBtn" class="btn-secondary">いいえ、戻る</button>
+        <button type="button" id="confirmCancelBtn" class="btn-danger">解約を確定する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cancel.js"></script>
+</body>
+</html>

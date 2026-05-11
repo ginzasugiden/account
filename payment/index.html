@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>支払い登録 - GSD</title>
+  <link rel="stylesheet" href="css/payment.css">
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD"></script>
+</head>
+<body>
+  <div class="container">
+
+    <div id="mockBanner" class="mock-banner">
+      🔧 MOCK MODE - 開発用画面（API は擬似レスポンス）
+    </div>
+
+    <h1>💳 GSD 支払い登録</h1>
+    <p class="subtitle">「コンテンツページ生成ちゃん」をご利用いただくには、お支払い方法の登録が必要です</p>
+    <p id="shopNameDisplay" class="shop-name"></p>
+
+    <div id="planBox" class="plan-box">
+      <p class="plan-title">ご利用プラン</p>
+      <p id="feeDisplay" class="plan-fee">月会費 5,000円（税込）</p>
+      <p class="plan-note">自動更新 / いつでも解約可能 / 日割り返金なし</p>
+    </div>
+
+    <form id="cardForm" autocomplete="off" style="display:none;">
+      <div class="form-group">
+        <label for="cardno">カード番号</label>
+        <input type="tel" id="cardno" name="cardno"
+               inputmode="numeric" autocomplete="cc-number"
+               placeholder="1234 5678 9012 3456" maxlength="23" required>
+      </div>
+
+      <div class="form-group">
+        <label>有効期限</label>
+        <div class="input-row">
+          <input type="tel" id="expire_month" name="expire_month"
+                 inputmode="numeric" autocomplete="cc-exp-month"
+                 class="small" placeholder="MM" maxlength="2" required>
+          <span class="sep">/</span>
+          <input type="tel" id="expire_year" name="expire_year"
+                 inputmode="numeric" autocomplete="cc-exp-year"
+                 class="small" placeholder="YY" maxlength="2" required>
+        </div>
+        <p class="help-text">月（2桁） / 年（西暦下2桁）</p>
+      </div>
+
+      <div class="form-group">
+        <label for="securitycode">セキュリティコード</label>
+        <input type="tel" id="securitycode" name="securitycode"
+               inputmode="numeric" autocomplete="cc-csc"
+               class="small" placeholder="123" maxlength="4" required>
+        <p class="help-text">カード裏面の3桁または4桁の数字</p>
+      </div>
+
+      <div class="form-group">
+        <label for="holdername">カード名義人（半角英字）</label>
+        <input type="text" id="holdername" name="holdername"
+               autocomplete="cc-name"
+               placeholder="TARO YAMADA" required>
+      </div>
+
+      <div class="terms-box">
+        <label>
+          <input type="checkbox" id="agreeTerms" required>
+          <span>
+            <a href="#" target="_blank">利用規約</a>と
+            <a href="#" target="_blank">決済規約</a>に同意する
+          </span>
+        </label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">カードを登録して開始する</button>
+
+      <p class="charge-notice">
+        ご登録後、即時 <strong>5,000円（税込）</strong> が課金されます。<br>
+        以降は毎月同日に自動課金されます（月末特例あり）。
+      </p>
+    </form>
+
+    <div id="successPanel" class="success-panel"></div>
+
+    <div id="message" class="message"></div>
+
+    <p class="recaptcha-notice">
+      このサイトは reCAPTCHA によって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/token.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>
+</parameter>

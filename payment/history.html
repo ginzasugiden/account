@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>課金履歴 - GSD</title>
+  <link rel="stylesheet" href="css/payment.css">
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD"></script>
+</head>
+<body>
+  <div class="container container-wide">
+
+    <div id="mockBanner" class="mock-banner">
+      🔧 MOCK MODE - 開発用画面（API は擬似レスポンス）
+    </div>
+
+    <h1>📋 課金履歴</h1>
+    <p id="shopNameDisplay" class="shop-name"></p>
+
+    <div id="historyPanel" style="display:none;">
+      <p class="muted">過去12ヶ月分を表示しています。</p>
+      <div id="tableWrap"></div>
+      <div id="moreWrap" class="more-wrap">
+        <button type="button" id="moreBtn" class="btn-secondary">もっと見る</button>
+      </div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="back-nav">
+      <a href="manage.html" class="back-link">← 管理画面に戻る</a>
+    </div>
+
+    <p class="recaptcha-notice">
+      このサイトは reCAPTCHA によって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/history.js"></script>
+</body>
+</html>

@@ -111,10 +111,74 @@
       margin-top: 15px;
     }
     .recaptcha-notice a { color: #667eea; }
+    /* ─── 支払い登録バナー（アカウント作成成功時に表示） ─── */
+    .payment-banner {
+      margin-top: 18px;
+      padding: 18px;
+      background: linear-gradient(135deg, #f5f7ff 0%, #f0ebff 100%);
+      border: 1px solid #d6dbff;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .payment-banner p {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.7;
+    }
+    .payment-banner .pay-btn {
+      display: inline-block;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+    }
+    .payment-banner .pay-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .payment-banner .pay-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .payment-banner .pay-note {
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+    /* ─── MOCK MODE バナー（開発時のみ表示） ─── */
+    .mock-mode-banner {
+      display: none;
+      background: #e67e22;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .mock-mode-banner code {
+      background: rgba(0,0,0,0.15);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div id="mockBanner" class="mock-mode-banner">
+      🔧 MOCK MODE - アカウント作成は擬似レスポンスです（<code>ACCOUNT_MOCK_MODE = true</code>）<br>
+      GAS には送信されません。本番デプロイ前に必ず <code>false</code> に戻してください。
+    </div>
     <h1>🛒 GSDアカウント作成</h1>
     
     <form id="accountForm">
@@ -163,9 +227,42 @@
   </div>
 
   <script>
-    // ★★★ 設定 ★★★
+    /* ═══════════════════════════════════════════════════════════════
+     *  MOCK MODE フラグ（テスト時のみ true / 本番 push 前に必ず false に戻す）
+     * ═══════════════════════════════════════════════════════════════
+     *
+     *  ACCOUNT_MOCK_MODE: アカウント作成フォーム送信のモック化
+     *    true  → GAS には送信せず擬似的に成功レスポンスを返す
+     *    false → 本物の GAS Web App にリクエストを送信（本番動作）
+     *
+     *  PAYMENT_MOCK_MODE: 「支払い方法を登録する」ボタンのモック化
+     *    true  → GAS /payment/issue-token を呼ばず直接 payment 画面へ遷移
+     *    false → GAS /payment/issue-token を叩いて redirect_url に遷移
+     *
+     *  両者は独立。テスト時の組合せ:
+     *    - 導線確認のみ:        true / true   ← フル MOCK（最も安全）
+     *    - 支払い登録だけ実機:  true / false  ← フォーム送信は擬似、GMOテストは実機
+     *    - 本番:                false / false ← 必ずこの状態で push
+     * ═══════════════════════════════════════════════════════════════ */
+    const ACCOUNT_MOCK_MODE = false;
+    const PAYMENT_MOCK_MODE = true;
+
+    // ★★★ 接続先設定 ★★★
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
-    const RECAPTCHA_SITE_KEY = '6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD';  // reCAPTCHA
+    const RECAPTCHA_SITE_KEY = '6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD';
+    // 支払い登録ページの URL（payment.ginzasugiden.com 公開前はリポジトリ相対パス）
+    const PAYMENT_REGISTER_URL = './payment/index.html';
+
+    // MOCK MODE 検知 → バナー表示 + コンソール警告
+    if (ACCOUNT_MOCK_MODE) {
+      document.getElementById('mockBanner').style.display = 'block';
+      console.warn('%c⚠️ ACCOUNT_MOCK_MODE 有効: アカウント作成は擬似レスポンスを返します',
+        'color:#fff;background:#e67e22;padding:4px 8px;border-radius:4px;font-weight:bold;');
+    }
+    if (PAYMENT_MOCK_MODE) {
+      console.warn('%c⚠️ PAYMENT_MOCK_MODE 有効: 支払い登録への遷移はモック token を使います',
+        'color:#fff;background:#e67e22;padding:4px 8px;border-radius:4px;font-weight:bold;');
+    }
     
     const form = document.getElementById('accountForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -195,6 +292,73 @@
       messageDiv.className = 'message ' + type;
       messageDiv.innerHTML = text;
     }
+
+    // ─── 支払い登録バナー ───
+    function renderPaymentBanner(shop, licenseKey) {
+      // 既存のバナーを消す
+      const old = document.getElementById('paymentBanner');
+      if (old) old.remove();
+
+      const banner = document.createElement('div');
+      banner.id = 'paymentBanner';
+      banner.className = 'payment-banner';
+      banner.innerHTML = `
+        <p><strong>すべての機能をご利用いただくにはお支払い方法の登録が必要です。</strong><br>
+        月会費 5,000円（税込）・自動更新・いつでも解約可能</p>
+        <button type="button" id="payNowBtn" class="pay-btn">💳 支払い方法を登録する</button>
+        <p class="pay-note">登録後、即時 5,000円が課金されます</p>
+      `;
+      messageDiv.parentNode.insertBefore(banner, messageDiv.nextSibling);
+      document.getElementById('payNowBtn').addEventListener('click', () => issuePaymentToken(shop, licenseKey));
+    }
+
+    async function issuePaymentToken(shop, licenseKey) {
+      const btn = document.getElementById('payNowBtn');
+      btn.disabled = true;
+      btn.textContent = '準備中...';
+
+      // MOCK モード: GAS を呼ばず直接 payment 画面へ遷移
+      if (PAYMENT_MOCK_MODE) {
+        const url = `${PAYMENT_REGISTER_URL}?token=mock_ot&shop=${encodeURIComponent(shop)}`;
+        window.location.href = url;
+        return;
+      }
+
+      // 本番: GAS の /payment/issue-token を呼んで redirect_url に遷移
+      try {
+        let recaptchaToken = '';
+        try {
+          if (typeof grecaptcha !== 'undefined') {
+            recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'payment_issue_token' });
+          }
+        } catch (e) {
+          // reCAPTCHA エラーは続行
+        }
+
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/payment/issue-token',
+            data: { shop: shop, licenseKey: licenseKey },
+            recaptchaToken: recaptchaToken
+          })
+        });
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data && result.data.redirect_url) {
+          window.location.href = result.data.redirect_url;
+        } else {
+          btn.disabled = false;
+          btn.textContent = '💳 支払い方法を登録する';
+          alert('支払い登録ページの準備に失敗しました: ' + (result.message || ''));
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = '💳 支払い方法を登録する';
+        alert('通信エラー: ' + err.message);
+      }
+    }
     
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -215,44 +379,58 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   submitBtn.textContent = '送信中...';
   showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
-  
+
   try {
-    // reCAPTCHAトークンを取得（エラーハンドリング追加）
-    let recaptchaToken = '';
-    try {
-      if (typeof grecaptcha !== 'undefined') {
-        recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'account_create' });
-        console.log('reCAPTCHA token取得成功');
-      } else {
-        console.log('grecaptchaが未定義です');
+    let result;
+
+    if (ACCOUNT_MOCK_MODE) {
+      // ─── MOCK MODE: GAS に送らず擬似レスポンス ───
+      console.log('[MOCK] アカウント作成リクエストを擬似処理:', data);
+      await new Promise((r) => setTimeout(r, 700));
+      result = {
+        status: 'success',
+        message: '【MOCK】アカウントを作成しました（GASには送信されていません）',
+      };
+    } else {
+      // ─── 本番: 実 GAS への送信 ───
+      let recaptchaToken = '';
+      try {
+        if (typeof grecaptcha !== 'undefined') {
+          recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'account_create' });
+          console.log('reCAPTCHA token取得成功');
+        } else {
+          console.log('grecaptchaが未定義です');
+        }
+      } catch (recaptchaError) {
+        console.error('reCAPTCHAエラー:', recaptchaError);
+        // reCAPTCHAエラーでも続行（GAS側でスキップされる）
       }
-    } catch (recaptchaError) {
-      console.error('reCAPTCHAエラー:', recaptchaError);
-      // reCAPTCHAエラーでも続行（GAS側でスキップされる）
+
+      console.log('GASにリクエスト送信:', GAS_URL);
+
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          endpoint: '/account/create',
+          data: data,
+          recaptchaToken: recaptchaToken
+        })
+      });
+
+      console.log('レスポンス受信:', response.status);
+
+      result = await response.json();
+      console.log('結果:', result);
     }
-    
-    console.log('GASにリクエスト送信:', GAS_URL);
-    
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        endpoint: '/account/create',
-        data: data,
-        recaptchaToken: recaptchaToken
-      })
-    });
-    
-    console.log('レスポンス受信:', response.status);
-    
-    const result = await response.json();
-    console.log('結果:', result);
-    
+
     if (result.status === 'success') {
-      showMessage('success', 
+      showMessage('success',
         '✅ ' + result.message + '<br><br>' +
         '確認メールをご確認ください。'
       );
+      // 支払い登録バナーを表示（shop と licenseKey は account 作成成功時の値を引き継ぎ）
+      renderPaymentBanner(data.id, data.licenseKey);
       form.reset();
     } else {
       showMessage('error', '❌ ' + (result.message || '登録に失敗しました'));

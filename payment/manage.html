@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>支払い管理 - GSD</title>
+  <link rel="stylesheet" href="css/payment.css">
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD"></script>
+</head>
+<body>
+  <div class="container">
+
+    <div id="mockBanner" class="mock-banner">
+      🔧 MOCK MODE - <code>?mock_status=active|cancelled_usable|cancelled_expired|suspended|unregistered</code> で状態切替可
+    </div>
+
+    <h1>💳 支払い管理</h1>
+    <p id="shopNameDisplay" class="shop-name"></p>
+
+    <div id="panel" style="display:none;"></div>
+    <div id="message" class="message"></div>
+
+    <p class="recaptcha-notice">
+      このサイトは reCAPTCHA によって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank">利用規約</a>が適用されます。
+    </p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/manage.js"></script>
+</body>
+</html>
