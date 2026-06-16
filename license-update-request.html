@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>ライセンスキー更新 - GSD</title>
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :focus-visible { outline: 3px solid #667eea; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      max-width: 450px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .message.success { background: #d4edda; color: #155724; }
+    .message.error { background: #f8d7da; color: #721c24; }
+    .message.loading { background: #e7f3ff; color: #004085; }
+    .help-text { font-size: 12px; color: #888; margin-top: 5px; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .recaptcha-notice {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      margin-top: 15px;
+    }
+    .recaptcha-notice a { color: #667eea; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ライセンスキー更新</h1>
+    <p class="subtitle">登録済みのユーザーIDとメールアドレスを入力してください</p>
+
+    <form id="licenseUpdateRequestForm" novalidate>
+      <div class="form-group">
+        <label for="userId">ユーザーID（店舗URL）</label>
+        <input type="text" id="userId" name="userId" placeholder="例: tokyoflower" required autocomplete="username">
+        <p class="help-text">アカウント作成時に登録した店舗URLのID部分</p>
+      </div>
+
+      <div class="form-group">
+        <label for="email">登録メールアドレス</label>
+        <input type="email" id="email" name="email" placeholder="例: shop@example.com" required autocomplete="email">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">更新メールを送信</button>
+    </form>
+
+    <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <a href="index.html" class="back-link">← アカウント作成ページに戻る</a>
+
+    <p class="recaptcha-notice">
+      このサイトはreCAPTCHAによって保護されています。
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>と
+      <a href="https://policies.google.com/terms" target="_blank" rel="noopener">利用規約</a>が適用されます。
+    </p>
+  </div>
+
+  <script>
+    // ★★★ 設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
+    const RECAPTCHA_SITE_KEY = '6LfpP14sAAAAAPFL0gSo_Ze_h8C91VsEC247xkDD';
+
+    const form = document.getElementById('licenseUpdateRequestForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+
+    function showMessage(type, text) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = text;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const userId = document.getElementById('userId').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!userId || !email) {
+        showMessage('error', 'すべての項目を入力してください');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+      showMessage('loading', '<span class="spinner"></span>メールを送信しています...');
+
+      try {
+        const captchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'license_update_request' });
+
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'licenseUpdateRequest', userId, email, captchaToken })
+        });
+
+        await response.json(); // レスポンスは常に {status:"ok"}（列挙防止）
+
+        // 送信結果に関わらず同一メッセージ（列挙防止）
+        showMessage('success',
+          '登録済みの場合、ライセンスキー更新用のリンクをメールでお送りしました。' +
+          '迷惑メールフォルダもご確認ください。');
+        form.reset();
+
+      } catch (err) {
+        showMessage('error', '通信エラーが発生しました。しばらく経ってから再度お試しください。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '更新メールを送信';
+      }
+    });
+  </script>
+</body>
+</html>

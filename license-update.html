@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>ライセンスキー更新（確認） - GSD</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :focus-visible { outline: 3px solid #667eea; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      max-width: 480px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: monospace;
+      transition: border-color 0.3s;
+    }
+    input[type="password"] { font-family: inherit; }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .message.success { background: #d4edda; color: #155724; }
+    .message.error { background: #f8d7da; color: #721c24; }
+    .message.loading { background: #e7f3ff; color: #004085; }
+    .message.warning { background: #fff3cd; color: #856404; }
+    .help-text { font-size: 12px; color: #888; margin-top: 5px; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .hidden { display: none !important; }
+    .expiry-highlight {
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ライセンスキー更新</h1>
+    <p class="subtitle">新しいライセンスキーとGSDパスワードを入力してください</p>
+
+    <!-- トークンなしでアクセスした場合のエラー -->
+    <div id="tokenError" class="message warning hidden" role="alert">
+      リンクが無効か期限切れです。最初からやり直してください。<br><br>
+      <a href="license-update-request.html">ライセンスキー更新を再度リクエスト</a>
+    </div>
+
+    <form id="updateForm" class="hidden" novalidate>
+      <div class="form-group">
+        <label for="newLicenseKey">新しいライセンスキー（RMSで再発行したもの）</label>
+        <input type="text" id="newLicenseKey" name="newLicenseKey"
+               placeholder="例: SL123456_XXXXXXXXXXXXXXXXXXXX"
+               required autocomplete="off" spellcheck="false">
+        <p class="help-text">RMS（楽天マーチャントサービス）で取得した新しいキーを貼り付けてください</p>
+      </div>
+
+      <div class="form-group">
+        <label for="password">GSDパスワード（現在のパスワード）</label>
+        <input type="password" id="password" name="password"
+               placeholder="現在のGSDパスワード"
+               required autocomplete="current-password">
+        <p class="help-text">GSDにログインするときのパスワードを入力してください</p>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">ライセンスキーを更新する</button>
+    </form>
+
+    <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <a href="license-update-request.html" class="back-link">← リクエストページに戻る</a>
+  </div>
+
+  <script>
+    // ★★★ 設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
+
+    const form = document.getElementById('updateForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+    const tokenErrorDiv = document.getElementById('tokenError');
+
+    // URLからトークンを取得（GASへは送るがページ読み込み時にAPIは叩かない）
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      tokenErrorDiv.classList.remove('hidden');
+    } else {
+      form.classList.remove('hidden');
+    }
+
+    function showMessage(type, html) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = html;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const newLicenseKey = document.getElementById('newLicenseKey').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!newLicenseKey || !password) {
+        showMessage('error', 'すべての項目を入力してください');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '更新中...';
+      showMessage('loading', '<span class="spinner"></span>ライセンスキーを検証しています...');
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'licenseUpdateConfirm', token, newLicenseKey, password })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'ok') {
+          const expiry = result.expiry || '';
+          showMessage('success',
+            'ライセンスキーを更新しました。' +
+            (expiry ? '<br>新しい有効期限: <span class="expiry-highlight">' + expiry + '</span>' : '')
+          );
+          form.classList.add('hidden');
+
+        } else {
+          const code = result.code || '';
+          switch (code) {
+            case 'wrong_password':
+              showMessage('error', 'パスワードが違います。GSDにログインするときのパスワードをご確認ください。');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'ライセンスキーを更新する';
+              break;
+
+            case 'invalid_key':
+              showMessage('error',
+                'このライセンスキーは無効です。RMSで再発行したキーをご確認ください。');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'ライセンスキーを更新する';
+              break;
+
+            case 'api_error':
+              showMessage('error',
+                '楽天APIへの接続でエラーが発生し、検証できませんでした。' +
+                'しばらく経ってから再度お試しください。');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'ライセンスキーを更新する';
+              break;
+
+            case 'invalid_token':
+            default:
+              showMessage('warning',
+                'リンクが無効か期限切れです。最初からやり直してください。<br><br>' +
+                '<a href="license-update-request.html">ライセンスキー更新を再度リクエスト</a>');
+              form.classList.add('hidden');
+              break;
+          }
+        }
+
+      } catch (err) {
+        showMessage('error', '通信エラーが発生しました。しばらく経ってから再度お試しください。');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'ライセンスキーを更新する';
+      }
+    });
+  </script>
+</body>
+</html>
