@@ -142,24 +142,10 @@
       </div>
 
       <div class="form-group">
-        <label for="last_name">代表者氏名（姓）<span class="required">*</span></label>
-        <input type="text" id="last_name" name="last_name" required maxlength="20"
-               placeholder="例：銀座">
-      </div>
-      <div class="form-group">
-        <label for="first_name">代表者氏名（名）<span class="required">*</span></label>
-        <input type="text" id="first_name" name="first_name" required maxlength="20"
-               placeholder="例：太郎">
-      </div>
-      <div class="form-group">
-        <label for="last_name_kana">代表者氏名（姓・カナ）<span class="required">*</span></label>
-        <input type="text" id="last_name_kana" name="last_name_kana" required maxlength="20"
-               placeholder="例：ギンザ">
-      </div>
-      <div class="form-group">
-        <label for="first_name_kana">代表者氏名（名・カナ）<span class="required">*</span></label>
-        <input type="text" id="first_name_kana" name="first_name_kana" required maxlength="20"
-               placeholder="例：タロウ">
+        <label for="representative_name">代表者氏名<span class="required">*</span></label>
+        <input type="text" id="representative_name" name="representative_name" required
+               maxlength="40" placeholder="例：銀座 太郎">
+        <small>姓と名の間にスペースを入れてください</small>
       </div>
 
       <div class="form-group">
@@ -230,12 +216,6 @@ form.addEventListener('submit', async (e) => {
   const error = validateForm(data);
   if (error) {
     showMessage('error', error);
-    return;
-  }
-
-  const kanaPattern = /^[ァ-ヶー]+$/;
-  if (!kanaPattern.test(data.last_name_kana) || !kanaPattern.test(data.first_name_kana)) {
-    showMessage('error', 'カナ氏名はカタカナで入力してください');
     return;
   }
 
