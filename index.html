@@ -140,7 +140,28 @@
         <label for="sname">店舗名</label>
         <input type="text" id="sname" name="sname" placeholder="例: 東京フラワー" required>
       </div>
-      
+
+      <div class="form-group">
+        <label for="last_name">代表者氏名（姓）<span class="required">*</span></label>
+        <input type="text" id="last_name" name="last_name" required maxlength="20"
+               placeholder="例：銀座">
+      </div>
+      <div class="form-group">
+        <label for="first_name">代表者氏名（名）<span class="required">*</span></label>
+        <input type="text" id="first_name" name="first_name" required maxlength="20"
+               placeholder="例：太郎">
+      </div>
+      <div class="form-group">
+        <label for="last_name_kana">代表者氏名（姓・カナ）<span class="required">*</span></label>
+        <input type="text" id="last_name_kana" name="last_name_kana" required maxlength="20"
+               placeholder="例：ギンザ">
+      </div>
+      <div class="form-group">
+        <label for="first_name_kana">代表者氏名（名・カナ）<span class="required">*</span></label>
+        <input type="text" id="first_name_kana" name="first_name_kana" required maxlength="20"
+               placeholder="例：タロウ">
+      </div>
+
       <div class="form-group">
         <label for="email">メールアドレス</label>
         <input type="email" id="email" name="email" placeholder="例: shop@example.com" required>
@@ -211,7 +232,13 @@ form.addEventListener('submit', async (e) => {
     showMessage('error', error);
     return;
   }
-  
+
+  const kanaPattern = /^[ァ-ヶー]+$/;
+  if (!kanaPattern.test(data.last_name_kana) || !kanaPattern.test(data.first_name_kana)) {
+    showMessage('error', 'カナ氏名はカタカナで入力してください');
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.textContent = '送信中...';
   showMessage('loading', '<span class="spinner"></span>アカウントを作成しています...');
