@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マイツール - GSD</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      background: #fff;
+      max-width: 480px;
+      width: 100%;
+      margin-top: 40px;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    .message.error { background: #f8d7da; color: #721c24; display: block; }
+    .message.loading { background: #e7f3ff; color: #004085; display: block; }
+    .help-text { font-size: 12px; color: #888; margin-top: 5px; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #004085;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    /* --- ツール一覧（ログイン後） --- */
+    #toolsSection { display: none; }
+    .welcome { text-align: center; color: #333; margin-bottom: 24px; }
+    .welcome strong { color: #667eea; }
+    .tool-card {
+      display: block;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .tool-card:hover { border-color: #667eea; transform: translateY(-1px); }
+    .tool-name { font-weight: 700; color: #333; font-size: 15px; }
+    .tool-desc { font-size: 12px; color: #888; margin-top: 4px; }
+    .empty-notice {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      padding: 20px 0;
+    }
+    .account-links {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    .account-links a {
+      display: block;
+      text-align: center;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .account-links a:hover { text-decoration: underline; }
+    .logout-btn {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      background: #f0f0f0;
+      color: #666;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .logout-btn:hover { background: #e5e5e5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧰 マイツール</h1>
+    <p class="subtitle">ログインすると、ご契約中のツール一覧が表示されます</p>
+
+    <!-- ログインフォーム -->
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="userId">ユーザーID（店舗URL）</label>
+        <input type="text" id="userId" name="userId" placeholder="例: tokyoflower" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password">パスワード</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+        <p class="help-text">アカウント作成完了メールに記載のパスワードです</p>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">ログイン</button>
+    </form>
+
+    <div id="message"></div>
+
+    <!-- ログイン後のツール一覧 -->
+    <div id="toolsSection">
+      <p class="welcome"><strong id="storeName"></strong> さん、こんにちは</p>
+      <div id="toolList"></div>
+      <button type="button" class="logout-btn" id="logoutBtn">ログアウト</button>
+    </div>
+
+    <div class="account-links">
+      <a href="license-update-request.html">楽天ライセンスキーを更新する</a>
+      <a href="reset-request.html">パスワードを忘れた場合</a>
+    </div>
+
+    <a href="index.html" class="back-link">← アカウント作成ページに戻る</a>
+  </div>
+
+  <script>
+    // ★★★ 設定 ★★★
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec';
+
+    // 顧客向けツールカタログ（公開情報のみ。管理向けURLは絶対に含めない）
+    // code=null のものは全ユーザー共通で常に表示する（契約サービスに関わらず利用可能なため）
+    const TOOL_CATALOG = [
+      { code: null, name: 'コンテンツページ生成ちゃん', url: 'https://contenchan.ginzasugiden.com/', desc: '商品ページ・画像のAI自動生成' },
+      { code: 'itemname', name: '商品名自動修正侍', url: 'https://item.ginzasugiden.com/', desc: 'イベント時の商品名プレフィックス自動付与' },
+      { code: 'leadtime', name: 'リードタイム修正侍', url: 'https://leadtime.ginzasugiden.com/', desc: 'お届け日数目安の一括変更' },
+      { code: 'couponissue', name: '毎日クーポン発行侍', url: 'https://coupon.ginzasugiden.com/', desc: '楽天クーポンの自動発行' },
+    ];
+
+    const loginForm    = document.getElementById('loginForm');
+    const submitBtn     = document.getElementById('submitBtn');
+    const messageDiv     = document.getElementById('message');
+    const toolsSection  = document.getElementById('toolsSection');
+    const storeNameEl   = document.getElementById('storeName');
+    const toolListEl     = document.getElementById('toolList');
+    const logoutBtn      = document.getElementById('logoutBtn');
+
+    function showMessage(type, text) {
+      messageDiv.className = 'message ' + type;
+      messageDiv.innerHTML = text;
+    }
+    function clearMessage() {
+      messageDiv.className = 'message';
+      messageDiv.innerHTML = '';
+    }
+
+    function renderTools(servicesRaw) {
+      const services = String(servicesRaw || '')
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      const hasSuite = services.includes('suite');
+
+      const visible = TOOL_CATALOG.filter(
+        (t) => t.code === null || hasSuite || services.includes(t.code)
+      );
+
+      toolListEl.innerHTML = '';
+      if (visible.length === 0) {
+        toolListEl.innerHTML = '<p class="empty-notice">現在ご利用いただけるツールがありません。担当者までお問い合わせください。</p>';
+        return;
+      }
+      for (const t of visible) {
+        const a = document.createElement('a');
+        a.className = 'tool-card';
+        a.href = t.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.innerHTML =
+          '<div class="tool-name">' + t.name + '</div>' +
+          '<div class="tool-desc">' + t.desc + '</div>';
+        toolListEl.appendChild(a);
+      }
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessage();
+
+      const userId = document.getElementById('userId').value.trim();
+      const password = document.getElementById('password').value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'ログイン中...';
+      showMessage('loading', '<span class="spinner"></span>ログインしています...');
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/auth',
+            data: { authType: 'password', userId, password },
+          }),
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          clearMessage();
+          loginForm.style.display = 'none';
+          toolsSection.style.display = 'block';
+          storeNameEl.textContent = result.user.storeName || result.user.id;
+          renderTools(result.user.services);
+        } else {
+          showMessage('error', '❌ ' + (result.message || 'ログインに失敗しました'));
+        }
+      } catch (err) {
+        showMessage('error', '❌ 通信エラーが発生しました。しばらく経ってから再度お試しください。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'ログイン';
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      toolsSection.style.display = 'none';
+      loginForm.style.display = 'block';
+      loginForm.reset();
+      clearMessage();
+    });
+  </script>
+</body>
+</html>
